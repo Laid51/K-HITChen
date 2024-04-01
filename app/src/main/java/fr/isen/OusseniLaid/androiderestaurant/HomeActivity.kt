@@ -1,6 +1,7 @@
+import android.annotation.SuppressLint
+import android.content.Context
 import android.content.Intent
 import android.os.Bundle
-import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
@@ -18,8 +19,15 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
+import androidx.core.content.ContextCompat.startActivity
+import com.android.volley.Request
+import com.android.volley.Response
+import com.android.volley.toolbox.JsonObjectRequest
+import com.android.volley.toolbox.Volley
+import com.google.gson.Gson
 import fr.isen.OusseniLaid.androiderestaurant.R
 import fr.isen.OusseniLaid.androiderestaurant.ui.theme.ProjectAndroidTheme
+import org.json.JSONObject
 
 class MainActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
@@ -87,11 +95,8 @@ fun CategoryItem(category: String) {
         modifier = Modifier.fillMaxWidth(), border = BorderStroke(1.dp, Color.Gray),
         contentColor = Color.Red,
         onClick = {
-            // Redirection vers la page de catégorie
-            val intent = Intent(context, CategoryActivity::class.java).apply {
-                putExtra("categoryName", category)
-            }
-            context.startActivity(intent)
+            // Récupération des éléments depuis le serveur
+            fetchMenuItems(context, category)
         }
     ) {
         Text(
@@ -103,31 +108,66 @@ fun CategoryItem(category: String) {
     }
 }
 
+fun fetchMenuItems(context: Context, category: String) {
+    val queue = Volley.newRequestQueue(context)
+    val url = "http://test.api.catering.bluecodegames.com/menu"
+
+    val jsonObject = JSONObject()
+    jsonObject.put("id_shop", "1")
+
+    val request = JsonObjectRequest(Request.Method.POST, url, jsonObject,
+        { response ->
+            // Traitement de la réponse
+            val itemList = response.getJSONArray(category)
+            val items = mutableListOf<MenuItem>()
+            val gson = Gson()
+            for (i in 0 until itemList.length()) {
+                val itemJson = itemList.getJSONObject(i)
+                val menuItem = gson.fromJson(itemJson.toString(), MenuItem::class.java)
+                items.add(menuItem)
+            }
+            // Redirection vers la page de catégorie avec les éléments récupérés
+            val intent = Intent(context, CategoryActivity::class.java).apply {
+                putExtra("items", ArrayList(items))
+                putExtra("categoryName", category)
+            }
+            context.startActivity(intent)
+        },
+        { error ->
+            // Gestion des erreurs
+            Toast.makeText(context, "Erreur de récupération des éléments: $error", Toast.LENGTH_SHORT).show()
+        })
+
+    queue.add(request)
+}
+
+data class MenuItem(
+    val title: String,
+    val imageUrl: String,
+    val price: String
+)
+
 class CategoryActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
         val categoryName = intent.getStringExtra("categoryName")
+        val items = intent.getSerializableExtra("items") as? List<MenuItem>
 
         setContent {
             ProjectAndroidTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
-                    CategoryPage(categoryName ?: "")
+                    CategoryPage(categoryName ?: "", items ?: emptyList())
                 }
             }
         }
     }
 }
 
+@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
+@OptIn(ExperimentalMaterial3Api::class)
 @Composable
-fun CategoryPage(categoryName: String) {
-    val listItems = when (categoryName) {
-        "Entrée" -> listOf("Entrée 1", "Entrée 2", "Entrée 3")
-        "Plats" -> listOf("Plat 1", "Plat 2", "Plat 3")
-        "Dessert" -> listOf("Dessert 1", "Dessert 2", "Dessert 3")
-        else -> emptyList()
-    }
-
+fun CategoryPage(categoryName: String, items: List<MenuItem>) {
     Scaffold(
         topBar = {
             TopAppBar(
@@ -140,29 +180,41 @@ fun CategoryPage(categoryName: String) {
         Column(
             modifier = Modifier.padding(16.dp)
         ) {
-            for (item in listItems) {
-                ListItem(text = { Text(text = item) }, onClick = {
-                    // Redirection vers la page de détail du plat choisi
-                    val intent = Intent(this@CategoryPage, DetailActivity::class.java).apply {
-                        putExtra("itemName", item)
+            for (item in items) {
+                ListItem(
+                    icon = {
+                        CoilImage(url = item.imageUrl, contentDescription = item.title)
+                    },
+                    text = {
+                        Text(text = item.title)
+                    },
+                    secondaryText = {
+                        Text(text = item.price)
+                    },
+                    onClick = {
+                        // Redirection vers la page de détail du plat choisi
+                        val intent = Intent(this@CategoryPage, DetailActivity::class.java).apply {
+                            putExtra("item", item)
+                        }
+                        startActivity(intent)
                     }
-                    startActivity(intent)
-                })
+                )
             }
         }
     }
 }
 
+
 class DetailActivity : ComponentActivity() {
     override fun onCreate(savedInstanceState: Bundle?) {
         super.onCreate(savedInstanceState)
 
-        val itemName = intent.getStringExtra("itemName")
+        val item = intent.getSerializableExtra("item") as? MenuItem
 
         setContent {
             ProjectAndroidTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
-                    DetailPage(itemName ?: "")
+                    DetailPage(item)
                 }
             }
         }
@@ -170,14 +222,20 @@ class DetailActivity : ComponentActivity() {
 }
 
 @Composable
-fun DetailPage(itemName: String) {
+fun DetailPage(item: MenuItem?) {
     Surface(color = MaterialTheme.colorScheme.background) {
         Column(
             modifier = Modifier.fillMaxSize(),
             verticalArrangement = Arrangement.Center,
             horizontalAlignment = Alignment.CenterHorizontally
         ) {
-            Text(text = "Détails de l'article : $itemName")
+            if (item != null) {
+                Text(text = "Titre: ${item.title}")
+                Text(text = "Prix: ${item.price}")
+                // Afficher d'autres informations du plat si nécessaire
+            } else {
+                Text(text = "Détails de l'article non disponibles")
+            }
         }
     }
 }
