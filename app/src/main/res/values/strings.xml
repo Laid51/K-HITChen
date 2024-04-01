@@ -1,23 +1,22 @@
-<resources>
+<resources xmlns:xliff="urn:oasis:names:tc:xliff:document:1.2">
     <string name="app_name">Project Android</string>
-    <string name="home_welcome">Bienvenue chez \n\nK'HITCHen</string>
+    <string name="home_welcome">Bienvenue chez <xliff:g id="kitchen">KHITCHen</xliff:g></string>
     <string name="Category1">Entrée</string>
     <string name="Category2">Plats</string>
     <string name="Category3">Dessert</string>
-        <string-array name="entries_array">
-            <item>Entrée 1</item>
-            <item>Entrée 2</item>
-            <item>Entrée 3</item>
-        </string-array>
-        <string-array name="dishes_array">
-            <item>Plat 1</item>
-            <item>Plat 2</item>
-            <item>Plat 3</item>
-        </string-array>
-        <string-array name="desserts_array">
-            <item>Dessert 1</item>
-            <item>Dessert 2</item>
-            <item>Dessert 3</item>
-        </string-array>
-    </resources>
-
+    <string-array name="entries_array">
+        <item>Entrée 1</item>
+        <item>Entrée 2</item>
+        <item>Entrée 3</item>
+    </string-array>
+    <string-array name="dishes_array">
+        <item>Plat 1</item>
+        <item>Plat 2</item>
+        <item>Plat 3</item>
+    </string-array>
+    <string-array name="desserts_array">
+        <item>Dessert 1</item>
+        <item>Dessert 2</item>
+        <item>Dessert 3</item>
+    </string-array>
+</resources>

@@ -1,15 +1,25 @@
-import android.annotation.SuppressLint
+
 import android.content.Context
 import android.content.Intent
 import android.os.Bundle
+import android.util.Log
 import android.widget.Toast
 import androidx.activity.ComponentActivity
 import androidx.activity.compose.setContent
 import androidx.compose.foundation.BorderStroke
 import androidx.compose.foundation.Image
-import androidx.compose.foundation.layout.*
-import androidx.compose.material3.*
-import androidx.compose.material3.TopAppBar
+import androidx.compose.foundation.clickable
+import androidx.compose.foundation.layout.Arrangement
+import androidx.compose.foundation.layout.Column
+import androidx.compose.foundation.layout.Spacer
+import androidx.compose.foundation.layout.fillMaxSize
+import androidx.compose.foundation.layout.fillMaxWidth
+import androidx.compose.foundation.layout.height
+import androidx.compose.foundation.layout.padding
+import androidx.compose.foundation.layout.size
+import androidx.compose.material3.MaterialTheme
+import androidx.compose.material3.Surface
+import androidx.compose.material3.Text
 import androidx.compose.runtime.Composable
 import androidx.compose.ui.Alignment
 import androidx.compose.ui.Modifier
@@ -19,12 +29,9 @@ import androidx.compose.ui.res.painterResource
 import androidx.compose.ui.text.font.FontWeight
 import androidx.compose.ui.unit.dp
 import androidx.compose.ui.unit.sp
-import androidx.core.content.ContextCompat.startActivity
 import com.android.volley.Request
-import com.android.volley.Response
 import com.android.volley.toolbox.JsonObjectRequest
 import com.android.volley.toolbox.Volley
-import com.google.gson.Gson
 import fr.isen.OusseniLaid.androiderestaurant.R
 import fr.isen.OusseniLaid.androiderestaurant.ui.theme.ProjectAndroidTheme
 import org.json.JSONObject
@@ -34,8 +41,10 @@ class MainActivity : ComponentActivity() {
         super.onCreate(savedInstanceState)
         setContent {
             ProjectAndroidTheme {
-                // A surface container using the 'background' color from the theme
-                Surface(modifier = Modifier.fillMaxSize(), color = MaterialTheme.colors.background) {
+                Surface(
+                    modifier = Modifier.fillMaxSize(),
+                    //color = MaterialTheme.colors.background
+                ) {
                     HomePage()
                 }
             }
@@ -52,7 +61,6 @@ class MainActivity : ComponentActivity() {
 fun HomePage() {
     Surface(
         modifier = Modifier.fillMaxSize(),
-        color = MaterialTheme.colors.background
     ) {
         Column(
             modifier = Modifier.fillMaxSize(),
@@ -92,12 +100,12 @@ fun HomePage() {
 fun CategoryItem(category: String) {
     val context = LocalContext.current
     Surface(
-        modifier = Modifier.fillMaxWidth(), border = BorderStroke(1.dp, Color.Gray),
-        contentColor = Color.Red,
-        onClick = {
+        modifier = Modifier.fillMaxWidth().clickable {
             // Récupération des éléments depuis le serveur
             fetchMenuItems(context, category)
-        }
+        },
+        border = BorderStroke(1.dp, Color.Gray),
+        contentColor = Color.Red
     ) {
         Text(
             text = category,
@@ -107,6 +115,7 @@ fun CategoryItem(category: String) {
         )
     }
 }
+
 
 fun fetchMenuItems(context: Context, category: String) {
     val queue = Volley.newRequestQueue(context)
@@ -120,11 +129,10 @@ fun fetchMenuItems(context: Context, category: String) {
             // Traitement de la réponse
             val itemList = response.getJSONArray(category)
             val items = mutableListOf<MenuItem>()
-            val gson = Gson()
             for (i in 0 until itemList.length()) {
                 val itemJson = itemList.getJSONObject(i)
-                val menuItem = gson.fromJson(itemJson.toString(), MenuItem::class.java)
-                items.add(menuItem)
+                //val menuItem = gson.fromJson(itemJson.toString(), MenuItem::class.java)
+                //items.add(menuItem)
             }
             // Redirection vers la page de catégorie avec les éléments récupérés
             val intent = Intent(context, CategoryActivity::class.java).apply {
@@ -157,84 +165,8 @@ class CategoryActivity : ComponentActivity() {
         setContent {
             ProjectAndroidTheme {
                 Surface(color = MaterialTheme.colorScheme.background) {
-                    CategoryPage(categoryName ?: "", items ?: emptyList())
+                    //CategoryPage(categoryName ?: "", items ?: emptyList())
                 }
-            }
-        }
-    }
-}
-
-@SuppressLint("UnusedMaterial3ScaffoldPaddingParameter")
-@OptIn(ExperimentalMaterial3Api::class)
-@Composable
-fun CategoryPage(categoryName: String, items: List<MenuItem>) {
-    Scaffold(
-        topBar = {
-            TopAppBar(
-                title = {
-                    Text(text = categoryName)
-                }
-            )
-        }
-    ) {
-        Column(
-            modifier = Modifier.padding(16.dp)
-        ) {
-            for (item in items) {
-                ListItem(
-                    icon = {
-                        CoilImage(url = item.imageUrl, contentDescription = item.title)
-                    },
-                    text = {
-                        Text(text = item.title)
-                    },
-                    secondaryText = {
-                        Text(text = item.price)
-                    },
-                    onClick = {
-                        // Redirection vers la page de détail du plat choisi
-                        val intent = Intent(this@CategoryPage, DetailActivity::class.java).apply {
-                            putExtra("item", item)
-                        }
-                        startActivity(intent)
-                    }
-                )
-            }
-        }
-    }
-}
-
-
-class DetailActivity : ComponentActivity() {
-    override fun onCreate(savedInstanceState: Bundle?) {
-        super.onCreate(savedInstanceState)
-
-        val item = intent.getSerializableExtra("item") as? MenuItem
-
-        setContent {
-            ProjectAndroidTheme {
-                Surface(color = MaterialTheme.colorScheme.background) {
-                    DetailPage(item)
-                }
-            }
-        }
-    }
-}
-
-@Composable
-fun DetailPage(item: MenuItem?) {
-    Surface(color = MaterialTheme.colorScheme.background) {
-        Column(
-            modifier = Modifier.fillMaxSize(),
-            verticalArrangement = Arrangement.Center,
-            horizontalAlignment = Alignment.CenterHorizontally
-        ) {
-            if (item != null) {
-                Text(text = "Titre: ${item.title}")
-                Text(text = "Prix: ${item.price}")
-                // Afficher d'autres informations du plat si nécessaire
-            } else {
-                Text(text = "Détails de l'article non disponibles")
             }
         }
     }
